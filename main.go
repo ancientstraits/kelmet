@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ancientstraits/kelmet/cmd"
@@ -15,17 +14,9 @@ func main() {
 		LongDesc:  "a Kubernetes package manager that is compatible with Helm",
 		Run:       cmd.RunUseSubcommands,
 	}
-	hello := &cmd.Command{
-		Name:      "hello",
-		Usage:     "hello",
-		ShortDesc: "echo hello",
-		LongDesc:  "prints out hello",
-		Run: func(c *cmd.Command, args []string) error {
-			fmt.Println("hello")
-			return nil
-		},
-	}
-	root.AddCommand(hello)
+	root.AddCommand(
+		PluginCmd,
+	)
 
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)

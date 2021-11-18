@@ -50,7 +50,7 @@ func (c *Command) Execute() error {
 		for _, subcmd := range c.subcmds {
 			fmt.Printf("\t%s: %s\n", subcmd.Name, subcmd.ShortDesc)
 		}
-		return fmt.Errorf("%s doesn't have subcommand", c.Name)
+		os.Exit(1)
 	}
 	for _, subcmd := range c.subcmds {
 		if subcmd.Name == args[0] {
