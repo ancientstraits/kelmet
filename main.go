@@ -2,33 +2,32 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"log"
+
+	"github.com/ancientstraits/kelmet/cmd"
 )
 
-type Cmd struct {
-	desc string
-	exec func(args ...string) bool
-}
-type CmdList map[string]Cmd
-
-func (c CmdList) Execute() bool {
-	for name, cmd := range c {
-		if name == os.Args[1] {
-			return cmd.exec(os.Args[2:]...)
-		}
-	}
-	return false
-}
-
 func main() {
-	program := CmdList {
-		"hello": Cmd {
-			desc: "Print hello",
-			exec: func(args ...string) bool {
-				fmt.Println("hello")
-				return true
-			},
+	root := &cmd.Command{
+		Name:      "kelmet",
+		Usage:     "kelmet",
+		ShortDesc: "a Kubernetes package manager",
+		LongDesc:  "a Kubernetes package manager that is compatible with Helm",
+		Run:       cmd.RunUseSubcommands,
+	}
+	hello := &cmd.Command{
+		Name:      "hello",
+		Usage:     "hello",
+		ShortDesc: "echo hello",
+		LongDesc:  "prints out hello",
+		Run: func(c *cmd.Command, args []string) error {
+			fmt.Println("hello")
+			return nil
 		},
 	}
-	program.Execute()
+	root.AddCommand(hello)
+
+	if err := root.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
