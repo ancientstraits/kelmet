@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -8,9 +9,9 @@ import (
 	"testing"
 )
 
-const site = "https://hub.helm.sh"
-const searchPath = "api/chartsvc/v1/charts/search"
-const version = "Helm/3.7"
+// const site = "https://hub.helm.sh"
+// const searchPath = "api/chartsvc/v1/charts/search"
+// const version = "Helm/3.7"
 
 const success = 200
 const resultSize = 256
@@ -52,4 +53,35 @@ func TestSearch(t *testing.T) {
 			break
 		}
 	}
+}
+
+
+func TestJSON(t *testing.T) {
+	data := `
+		{"data":
+			[
+				{
+					"id":"hello/hello",
+					"artifactHub": {
+						"packageUrl":"https://artifacthub.io/packages/helm/hello/hello"
+					},
+					"attributes": {
+						"description":"A Helm chart for my simple hello application",
+						"repo":{"name":"hello","url":"https://www.kleinloog.ch/hello-helm/"}
+					},
+					"relationships": {
+						"latestChartVersion":
+							{"data":{"version":"0.4.0-rc2","app_version":"v4"}
+						}
+					}
+				}
+			]
+		}`
+	into := ArtifactHubResponse{}
+	err := json.Unmarshal([]byte(data), &into)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Logf("%+v", into)
 }
