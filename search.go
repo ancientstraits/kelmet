@@ -59,13 +59,14 @@ func execRequest(url string) (string, error) {
 
 func reqToStr(res *http.Response) string {
 	ret := ""
-	result := make([]byte, 4)
+	result := make([]byte, 1)
 	for {
 		_, err := res.Body.Read(result)
-		ret += string(result)
 		if err == io.EOF {
 			break
 		}
+
+		ret += string(result)
 	}
 	return ret
 }
@@ -130,10 +131,12 @@ var SearchHub = &cmd.Command{
 
 		data, err := parseResponse(result)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse JSON: %s\n%s", err, result)
 		}
 
-		fmt.Println(data)
+		for _, pkg := range data.Data {
+			fmt.Println(pkg.Id)
+		}
 
 		return nil
 	},
