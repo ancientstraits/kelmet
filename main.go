@@ -16,6 +16,7 @@ func main() {
 	}
 	root.AddCommand(
 		PluginCmd,
+		SearchCmd,
 	)
 
 	if err := root.Execute(); err != nil {
