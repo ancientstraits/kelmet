@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -24,6 +25,9 @@ type Command struct {
 	// A longer description.
 	LongDesc string
 
+	// The least amount of arguments in the command.
+	LeastArgs int
+
 	// How should the command be run?
 	// If only its subcommands should be executed,
 	// make it equal to `RunUseSubcommands`.
@@ -38,6 +42,22 @@ func RunUseSubcommands(c *Command, args []string) error {
 	return c.Execute()
 }
 
+// Implements fmt.Stringer.
+func (c *Command) String() string {
+	ret := fmt.Sprintf("%s %s:\n  %s\n\n", c.Name, c.Usage, c.LongDesc)
+
+	if len(c.subcmds) == 0 {
+		ret += fmt.Sprintf("Needs at least %d arguments", c.LeastArgs)
+		return ret
+	}
+
+	ret += "Available subcommands:\n"
+	for _, subcmd := range c.subcmds {
+		ret += fmt.Sprintf("  %s: %s\n", subcmd.Name, subcmd.ShortDesc)
+	}
+	return ret
+}
+
 // Adds a subcommand to the command.
 func (c *Command) AddCommand(cmds ...*Command) {
 	c.subcmds = append(c.subcmds, cmds...)
@@ -45,12 +65,10 @@ func (c *Command) AddCommand(cmds ...*Command) {
 
 // Executes the command.
 func (c *Command) Execute() error {
-	if args = args[1:]; len(args) < 1 && len(c.subcmds) > 0 {
-		fmt.Printf("%s %s\n%s\n", c.Name, c.Usage, c.LongDesc)
-		for _, subcmd := range c.subcmds {
-			fmt.Printf("\t%s: %s\n", subcmd.Name, subcmd.ShortDesc)
-		}
-		os.Exit(1)
+	args = args[1:]
+	if len(c.subcmds) > 0 && len(args) == 0 ||
+		len(args) < c.LeastArgs {
+		log.Fatal(c)
 	}
 	for _, subcmd := range c.subcmds {
 		if subcmd.Name == args[0] {
@@ -60,6 +78,7 @@ func (c *Command) Execute() error {
 	if c.subcmds == nil {
 		return c.Run(nil, args)
 	} else {
-		return fmt.Errorf("invalid command")
+		log.Fatal(c.String() + "Invalid subcommand\n\n")
 	}
+	return nil
 }

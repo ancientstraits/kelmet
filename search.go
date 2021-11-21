@@ -118,6 +118,7 @@ var SearchHub = &cmd.Command{
 	Usage:     "[package_name]",
 	ShortDesc: "search packages in Hub",
 	LongDesc:  "search for Helm charts in Artifact Hub",
+	LeastArgs: 1,
 	Run: func(c *cmd.Command, args []string) error {
 		url, err := searchToUrl(args[0])
 		if err != nil {
@@ -147,6 +148,7 @@ var SearchRepo = &cmd.Command{
 	Usage:     "[package_name]",
 	ShortDesc: "search packages in repo",
 	LongDesc:  "search for Helm charts in repositories",
+	LeastArgs: 1,
 	Run: func(c *cmd.Command, args []string) error {
 		return nil
 	},
