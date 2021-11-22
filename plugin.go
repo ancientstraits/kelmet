@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/ancientstraits/kelmet/cmd"
-	"github.com/docker/docker/daemon/graphdriver/copy"
+	"gopkg.in/yaml.v2"
 )
 
 var PluginCmd = &cmd.Command{
@@ -41,7 +44,7 @@ var PluginInstall = &cmd.Command{
 		}
 
 		plugin := path.Join(os.Getenv("HELM_PLUGINS"), args[0])
-		if err := copy.DirCopy(args[0], plugin, copy.Content, false); err != nil {
+		if err := os.Symlink(args[0], plugin); err != nil {
 			return err
 		}
 		fmt.Printf("%s successfully installed to %s\n", args[0], plugin)
@@ -93,6 +96,52 @@ var PluginUpdate = &cmd.Command{
 	},
 }
 
+type PluginConf struct {
+	Name            string `yaml:"name"`
+	Version         string `yaml:"version"`
+	Usage           string `yaml:"usage"`
+	Description     string `yaml:"description"`
+	IgnoreFlags     bool   `yaml:"ignoreFlags"`
+	Command         string `yaml:"command"`
+	PlatformCommand []struct {
+		Os      string `yaml:"os"`
+		Arch    string `yaml:"arch"`
+		Command string `yaml:"command"`
+	} `yaml:"platformCommand"`
+}
+
+// p is a YAML file.
+func genPlugin(p string) *cmd.Command {
+	pcontent, err := os.ReadFile(p)
+	if err != nil {
+		panic(err)
+	}
+
+	pc := PluginConf{}
+	if err := yaml.Unmarshal([]byte(pcontent), &pc); err != nil {
+		panic(err)
+	}
+
+	ret := &cmd.Command{
+		Name:      pc.Name,
+		Usage:     pc.Usage,
+		ShortDesc: pc.Description,
+		LongDesc:  pc.Description,
+		LeastArgs: 0,
+		Run: func(c *cmd.Command, args []string) error {
+			cmdargs := strings.Split(pc.Command, " ")
+			com := exec.Command(cmdargs[0], cmdargs[1:]...)
+			com.Stdin = os.Stdin
+			com.Stderr = os.Stderr
+			com.Stdout = os.Stdout
+			return com.Run()
+		},
+	}
+	return ret
+}
+
+var Plugins = []*cmd.Command{}
+
 func init() {
 	PluginCmd.AddCommand(
 		PluginInstall,
@@ -100,4 +149,23 @@ func init() {
 		PluginList,
 		PluginUpdate,
 	)
+
+	if err := checkPluginPath(); err != nil {
+		panic(err)
+	}
+
+	plugdir := os.Getenv("HELM_PLUGINS")
+	entries, err := os.ReadDir(plugdir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, entry := range entries {
+		metadata := path.Join(plugdir, entry.Name(), "plugin.yaml")
+		if _, err := os.Stat(metadata); errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+
+		Plugins = append(Plugins, genPlugin(metadata))
+	}
 }

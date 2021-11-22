@@ -18,6 +18,9 @@ func main() {
 		PluginCmd,
 		SearchCmd,
 	)
+	root.AddCommand(
+		Plugins...,
+	)
 
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
